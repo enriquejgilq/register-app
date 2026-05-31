@@ -130,7 +130,7 @@ export const PersonTable: React.FC<PersonTableProps> = ({
         }}
       >
         <BadgeRoundedIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-        <Typography variant="h6" color="text.secondary" fontWeight={600} gutterBottom>
+        <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600 }} gutterBottom>
           No hay registros
         </Typography>
         <Typography variant="body2" color="text.disabled">
@@ -228,14 +228,14 @@ export const PersonTable: React.FC<PersonTableProps> = ({
 
                   {/* Nombre */}
                   <TableCell>
-                    <Typography variant="body2" fontWeight={600}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {person.nombre}
                     </Typography>
                   </TableCell>
 
                   {/* Apellido */}
                   <TableCell>
-                    <Typography variant="body2" fontWeight={600}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {person.apellido}
                     </Typography>
                   </TableCell>

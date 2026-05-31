@@ -2,7 +2,7 @@
 // App.tsx — Componente raíz con toda la lógica integrada
 // ============================================================
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Container, Typography, alpha, Fade } from '@mui/material';
 import { Header } from './components/layout/Header';
 import { PersonTable } from './components/persons/PersonTable';
@@ -262,13 +262,12 @@ export default function App() {
                     </Typography>
                     <Typography
                       variant="h4"
-                      fontWeight={800}
-                      sx={{ color: stat.color, lineHeight: 1, fontSize: { xs: '1.6rem', md: '2rem' } }}
+                      sx={{ fontWeight: 800, color: stat.color, lineHeight: 1, fontSize: { xs: '1.6rem', md: '2rem' } }}
                     >
                       {stat.value}
                     </Typography>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
                 </Box>

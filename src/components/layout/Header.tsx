@@ -82,8 +82,8 @@ export const Header: React.FC<HeaderProps> = ({
           <Box>
             <Typography
               variant="h6"
-              fontWeight={800}
               sx={{
+                fontWeight: 800,
                 background: 'linear-gradient(135deg, #e2e8f0, #a78bfa)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
@@ -95,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
               Registro de Personas
             </Typography>
             {!isMobile && (
-              <Typography variant="caption" color="text.secondary" display="block">
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 Gestión de Identidades
               </Typography>
             )}
@@ -190,13 +190,15 @@ export const Header: React.FC<HeaderProps> = ({
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
               onClose={() => setMenuAnchor(null)}
-              PaperProps={{
-                sx: {
-                  mt: 1,
-                  borderRadius: 2,
-                  border: `1px solid ${alpha('#6366f1', 0.2)}`,
-                  minWidth: 200,
-                },
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 1,
+                    borderRadius: 2,
+                    border: `1px solid ${alpha('#6366f1', 0.2)}`,
+                    minWidth: 200,
+                  },
+                }
               }}
             >
               <MenuItem onClick={() => { onImportExcel(); setMenuAnchor(null); }} id="mobile-import-btn">

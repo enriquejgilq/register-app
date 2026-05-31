@@ -4,6 +4,7 @@
 
 import { useMemo, useState } from 'react';
 import { usePersonStore } from '../store/personStore';
+import type { PersonStore } from '../store/personStore';
 import type { Person } from '../models/Person';
 
 export interface UsePersonsOptions {
@@ -34,12 +35,12 @@ export interface UsePersonsReturn {
   error: string | null;
 
   // Acciones
-  addPerson: ReturnType<typeof usePersonStore>['addPerson'];
-  updatePerson: ReturnType<typeof usePersonStore>['updatePerson'];
-  deletePerson: ReturnType<typeof usePersonStore>['deletePerson'];
-  deleteMultiplePersons: ReturnType<typeof usePersonStore>['deleteMultiplePersons'];
-  importPersons: ReturnType<typeof usePersonStore>['importPersons'];
-  clearAll: ReturnType<typeof usePersonStore>['clearAll'];
+  addPerson: PersonStore['addPerson'];
+  updatePerson: PersonStore['updatePerson'];
+  deletePerson: PersonStore['deletePerson'];
+  deleteMultiplePersons: PersonStore['deleteMultiplePersons'];
+  importPersons: PersonStore['importPersons'];
+  clearAll: PersonStore['clearAll'];
 }
 
 export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {

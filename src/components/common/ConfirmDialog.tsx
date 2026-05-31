@@ -44,11 +44,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       onClose={onCancel}
       maxWidth="xs"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          border: `1px solid ${alpha(color, 0.3)}`,
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 3,
+            border: `1px solid ${alpha(color, 0.3)}`,
+          },
+        }
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
@@ -67,7 +69,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           >
             <WarningAmberRoundedIcon sx={{ color, fontSize: 22 }} />
           </Box>
-          <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary' }}>
+          <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700 }}>
             {title}
           </Typography>
         </Box>

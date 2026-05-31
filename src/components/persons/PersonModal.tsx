@@ -63,7 +63,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
     watch,
     setValue,
     setError,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting },
   } = useForm<PersonSchemaType>({
     resolver: zodResolver(personSchema),
     defaultValues,
@@ -133,8 +133,10 @@ export const PersonModal: React.FC<PersonModalProps> = ({
       onClose={handleClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: { borderRadius: 3 },
+      slotProps={{
+        paper: {
+          sx: { borderRadius: 3 },
+        }
       }}
     >
       {/* Header del modal */}
@@ -159,7 +161,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
               )}
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={700}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 {isEditing ? 'Editar Persona' : 'Nueva Persona'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -186,7 +188,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
       <DialogContent sx={{ pt: 3 }}>
         <Grid container spacing={3}>
           {/* Columna izquierda — Foto */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Controller
               name="fotoBase64"
               control={control}
@@ -209,10 +211,10 @@ export const PersonModal: React.FC<PersonModalProps> = ({
           </Grid>
 
           {/* Columna derecha — Datos */}
-          <Grid item xs={12} md={8}>
+          <Grid size={{ xs: 12, md: 8 }}>
             <Grid container spacing={2}>
               {/* Nombre */}
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="nombre"
                   control={control}
@@ -231,7 +233,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
               </Grid>
 
               {/* Apellido */}
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="apellido"
                   control={control}
@@ -249,7 +251,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
               </Grid>
 
               {/* Cédula */}
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="cedula"
                   control={control}
@@ -268,7 +270,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
               </Grid>
 
               {/* Teléfono */}
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="telefono"
                   control={control}
@@ -287,7 +289,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
               </Grid>
 
               {/* RIF */}
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="rif"
                   control={control}
@@ -306,7 +308,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
               </Grid>
 
               {/* Correo */}
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="correo"
                   control={control}

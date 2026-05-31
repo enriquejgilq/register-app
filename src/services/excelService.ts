@@ -86,7 +86,7 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
       
       const personMatch = persons.find(p => (p as any)._rowNumber === imgRowNumber);
       if (personMatch && !personMatch.fotoBase64) {
-        const media = workbook.getImage(img.imageId);
+        const media = workbook.getImage(Number(img.imageId));
         if (media && media.buffer) {
           // Convertir ArrayBuffer a Base64 manualmente en el navegador
           let binary = '';

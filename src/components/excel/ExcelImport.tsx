@@ -85,7 +85,7 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
   const hasErrors = (result?.errors?.length ?? 0) > 0;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -99,7 +99,7 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
               <UploadFileRoundedIcon sx={{ color: 'success.main', fontSize: 20 }} />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={700}>Importar desde Excel</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>Importar desde Excel</Typography>
               <Typography variant="caption" color="text.secondary">
                 Sube un archivo .xlsx con los datos de personas
               </Typography>
@@ -155,7 +155,7 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
 
             {selectedFile ? (
               <>
-                <Typography variant="subtitle1" fontWeight={700} color="success.main">
+                <Typography variant="subtitle1" color="success.main" sx={{ fontWeight: 700 }}>
                   {selectedFile.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -164,7 +164,7 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
               </>
             ) : (
               <>
-                <Typography variant="subtitle1" fontWeight={600} color="text.secondary">
+                <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 600 }}>
                   {isDragging ? 'Suelta el archivo aquí' : 'Arrastra tu archivo Excel aquí'}
                 </Typography>
                 <Typography variant="caption" color="text.disabled">
