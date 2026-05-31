@@ -47,36 +47,38 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         placeholder={placeholder}
         disabled={disabled}
         id="search-bar-input"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchRoundedIcon
-                sx={{
-                  color: value ? 'primary.main' : 'text.disabled',
-                  fontSize: 20,
-                  transition: 'color 0.2s',
-                }}
-              />
-            </InputAdornment>
-          ),
-          endAdornment: value ? (
-            <InputAdornment position="end">
-              <Tooltip title="Limpiar búsqueda">
-                <IconButton
-                  size="small"
-                  onClick={() => onChange('')}
-                  id="search-clear-btn"
-                  sx={{ color: 'text.secondary' }}
-                >
-                  <ClearRoundedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </InputAdornment>
-          ) : null,
-          sx: {
-            borderRadius: 3,
-            fontSize: '0.9rem',
-          },
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchRoundedIcon
+                  sx={{
+                    color: value ? 'primary.main' : 'text.disabled',
+                    fontSize: 20,
+                    transition: 'color 0.2s',
+                  }}
+                />
+              </InputAdornment>
+            ),
+            endAdornment: value ? (
+              <InputAdornment position="end">
+                <Tooltip title="Limpiar búsqueda">
+                  <IconButton
+                    size="small"
+                    onClick={() => onChange('')}
+                    id="search-clear-btn"
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    <ClearRoundedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </InputAdornment>
+            ) : null,
+            sx: {
+              borderRadius: 3,
+              fontSize: '0.9rem',
+            },
+          }
         }}
         sx={{
           '& .MuiOutlinedInput-root': {

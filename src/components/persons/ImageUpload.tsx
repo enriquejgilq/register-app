@@ -86,7 +86,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <Box>
-      <Typography variant="caption" color="text.secondary" fontWeight={600} mb={1} display="block">
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
         FOTO DE CÉDULA
       </Typography>
 
@@ -188,13 +188,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         </Box>
 
         {/* Texto de ayuda */}
-        <Box textAlign="center">
+        <Box sx={{ textAlign: 'center' }}>
           <Typography variant="caption" color="text.secondary">
             {isDragging
               ? 'Suelta la imagen aquí'
               : 'Arrastra una imagen o haz clic para seleccionar'}
           </Typography>
-          <Typography variant="caption" color="text.disabled" display="block">
+          <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
             JPG, PNG, WEBP · Máx. 5MB
           </Typography>
         </Box>

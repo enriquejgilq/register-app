@@ -85,7 +85,7 @@ export function validateField(
   const partial = personSchema.shape[field];
   const result = partial.safeParse(value);
   if (!result.success) {
-    return result.error.errors[0]?.message;
+    return result.error.issues[0]?.message;
   }
   return undefined;
 }
