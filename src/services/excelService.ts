@@ -25,7 +25,7 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
     throw new Error('El archivo Excel está vacío o no tiene hojas.');
   }
 
-  const persons: Person[] = [];
+  const persons: (Person & { _rowNumber?: number })[] = [];
   const errors: ImportError[] = [];
   let successCount = 0;
 
@@ -70,8 +70,9 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
     const mapped = mapRowToPersonExcelJS(rawData, rowNumber, errors);
     if (mapped) {
       // Guardamos la fila temporalmente para mapear la imagen después
-      (mapped as any)._rowNumber = rowNumber;
-      persons.push(mapped);
+      const mappedWithRow: Person & { _rowNumber?: number } = mapped;
+      mappedWithRow._rowNumber = rowNumber;
+      persons.push(mappedWithRow);
       successCount++;
     }
   });
@@ -84,7 +85,7 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
       // tl.row = 0 significa la fila 1. Así que la row del excel es tl.row + 1
       const imgRowNumber = Math.floor(img.range.tl.row) + 1;
       
-      const personMatch = persons.find(p => (p as any)._rowNumber === imgRowNumber);
+      const personMatch = persons.find(p => p._rowNumber === imgRowNumber);
       if (personMatch && !personMatch.fotoBase64) {
         const media = workbook.getImage(Number(img.imageId));
         if (media && media.buffer) {
@@ -106,7 +107,7 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
   }
 
   // Limpiar campo temporal
-  persons.forEach(p => delete (p as any)._rowNumber);
+  persons.forEach(p => delete p._rowNumber);
 
   return {
     persons,
@@ -142,6 +143,7 @@ function mapRowToPersonExcelJS(
   const now = new Date().toISOString();
   return {
     id: uuidv4(),
+    companyId: '', // Se sobreescribirá al importar a la base de datos de la empresa
     nombre: normalized.nombre ?? '',
     apellido: normalized.apellido ?? '',
     cedula: normalized.cedula ?? '',

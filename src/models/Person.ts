@@ -4,6 +4,7 @@
 
 export interface Person {
   id: string;
+  companyId: string;     // Identificador de la empresa propietaria del registro
   nombre: string;
   apellido: string;
   cedula: string;
@@ -16,9 +17,9 @@ export interface Person {
   updatedAt: string;     // ISO date string
 }
 
-export type PersonFormData = Omit<Person, 'id' | 'createdAt' | 'updatedAt'>;
+export type PersonFormData = Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'companyId'>;
 
-export type PersonCreateInput = Omit<Person, 'id' | 'createdAt' | 'updatedAt'>;
+export type PersonCreateInput = Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'companyId'>;
 
 export type PersonUpdateInput = Partial<PersonCreateInput>;
 
@@ -35,7 +36,7 @@ export const SEARCHABLE_FIELDS: SearchableField[] = [
 ];
 
 // Mapa de labels de campos para la UI
-export const FIELD_LABELS: Record<keyof Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'fotoBase64' | 'fotoNombre'>, string> = {
+export const FIELD_LABELS: Record<keyof Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'fotoBase64' | 'fotoNombre' | 'companyId'>, string> = {
   nombre: 'Nombre',
   apellido: 'Apellido',
   cedula: 'Cédula de Identidad',

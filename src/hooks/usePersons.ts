@@ -5,7 +5,8 @@
 import { useMemo, useState } from 'react';
 import { usePersonStore } from '../store/personStore';
 import type { PersonStore } from '../store/personStore';
-import type { Person } from '../models/Person';
+import type { Person, PersonCreateInput } from '../models/Person';
+import { useAuthStore } from '../store/authStore';
 
 export interface UsePersonsOptions {
   pageSize?: number;
@@ -34,28 +35,30 @@ export interface UsePersonsReturn {
   isLoading: boolean;
   error: string | null;
 
-  // Acciones
-  addPerson: PersonStore['addPerson'];
-  updatePerson: PersonStore['updatePerson'];
-  deletePerson: PersonStore['deletePerson'];
-  deleteMultiplePersons: PersonStore['deleteMultiplePersons'];
-  importPersons: PersonStore['importPersons'];
-  clearAll: PersonStore['clearAll'];
+  // Acciones (con companyId inyectado automáticamente)
+  addPerson: (input: PersonCreateInput) => Promise<Person>;
+  updatePerson: (id: string, input: any) => Promise<void>;
+  deletePerson: (id: string) => Promise<void>;
+  deleteMultiplePersons: (ids: string[]) => Promise<void>;
+  importPersons: (persons: PersonCreateInput[], replace?: boolean) => Promise<void>;
+  clearAll: () => Promise<void>;
 }
 
 export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
   const { pageSize: initialPageSize = 10 } = options;
+  const company = useAuthStore((s) => s.company);
+  const companyId = company?.id || '';
 
   const {
     persons,
     isLoading,
     error,
-    addPerson,
-    updatePerson,
-    deletePerson,
-    deleteMultiplePersons,
-    importPersons,
-    clearAll,
+    addPerson: storeAddPerson,
+    updatePerson: storeUpdatePerson,
+    deletePerson: storeDeletePerson,
+    deleteMultiplePersons: storeDeleteMultiplePersons,
+    importPersons: storeImportPersons,
+    clearAll: storeClearAll,
   } = usePersonStore();
 
   const [page, setPage] = useState(0);
@@ -91,6 +94,15 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     const start = page * pageSize;
     return filteredPersons.slice(start, start + pageSize);
   }, [filteredPersons, page, pageSize]);
+
+  // Envolturas para inyectar companyId automáticamente
+  const addPerson = (input: PersonCreateInput) => storeAddPerson(input, companyId);
+  const updatePerson = (id: string, input: any) => storeUpdatePerson(id, input, companyId);
+  const deletePerson = (id: string) => storeDeletePerson(id, companyId);
+  const deleteMultiplePersons = (ids: string[]) => storeDeleteMultiplePersons(ids, companyId);
+  const importPersons = (personsList: PersonCreateInput[], replace?: boolean) =>
+    storeImportPersons(personsList, companyId, replace);
+  const clearAll = () => storeClearAll(companyId);
 
   return {
     persons,

@@ -1,16 +1,23 @@
 // ============================================================
-// Person Store — Zustand con persistencia en LocalStorage
+// Person Store — Zustand sincronizado con Firebase Firestore
 // ============================================================
 
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { Person, PersonCreateInput, PersonUpdateInput } from '../models/Person';
 import {
-  createStorageService,
-  PERSONS_STORAGE_KEY,
-} from '../services/storageService';
-
-const storage = createStorageService<Person>(PERSONS_STORAGE_KEY);
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+  query,
+  where,
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 // -------------------------------------------------------
 // Tipos del store
@@ -22,20 +29,20 @@ interface PersonState {
 }
 
 interface PersonActions {
-  // Inicialización
-  initialize: () => void;
+  // Inicialización (con companyId obligatorio)
+  initialize: (companyId: string) => Promise<void>;
 
   // CRUD
-  addPerson: (input: PersonCreateInput) => Person;
-  updatePerson: (id: string, input: PersonUpdateInput) => void;
-  deletePerson: (id: string) => void;
-  deleteMultiplePersons: (ids: string[]) => void;
+  addPerson: (input: PersonCreateInput, companyId: string) => Promise<Person>;
+  updatePerson: (id: string, input: PersonUpdateInput, companyId: string) => Promise<void>;
+  deletePerson: (id: string, companyId: string) => Promise<void>;
+  deleteMultiplePersons: (ids: string[], companyId: string) => Promise<void>;
 
   // Importación masiva
-  importPersons: (persons: Person[], replace?: boolean) => void;
+  importPersons: (persons: PersonCreateInput[], companyId: string, replace?: boolean) => Promise<void>;
 
   // Estado
-  clearAll: () => void;
+  clearAll: (companyId: string) => Promise<void>;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
 }
@@ -51,81 +58,264 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  // Inicializar desde LocalStorage
-  initialize: () => {
-    set({ isLoading: true });
+  // Inicializar desde Firestore filtrando por empresa
+  initialize: async (companyId: string) => {
+    set({ isLoading: true, error: null });
     try {
-      const saved = storage.getAll();
-      set({ persons: saved, isLoading: false });
+      const q = query(collection(db, 'persons'), where('companyId', '==', companyId));
+      const querySnapshot = await getDocs(q);
+      const list: Person[] = [];
+      querySnapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as Person);
+      });
+      set({ persons: list, isLoading: false });
     } catch (error) {
+      console.error('Error al inicializar personas:', error);
       set({
-        error: 'Error al cargar los datos guardados',
+        error: 'Error al cargar los datos desde la nube.',
         isLoading: false,
       });
     }
   },
 
-  // Agregar persona
-  addPerson: (input: PersonCreateInput): Person => {
-    const now = new Date().toISOString();
-    const newPerson: Person = {
-      ...input,
-      id: uuidv4(),
-      createdAt: now,
-      updatedAt: now,
-    };
+  // Agregar persona en Firestore
+  addPerson: async (input: PersonCreateInput, companyId: string): Promise<Person> => {
+    set({ isLoading: true, error: null });
+    try {
+      const id = uuidv4();
+      const now = new Date().toISOString();
+      const newPerson: Person = {
+        ...input,
+        id,
+        companyId,
+        createdAt: now,
+        updatedAt: now,
+      };
 
-    const updated = [...get().persons, newPerson];
-    storage.save(updated);
-    set({ persons: updated });
-    return newPerson;
+      await setDoc(doc(db, 'persons', id), newPerson);
+      
+      const updated = [...get().persons, newPerson];
+      set({ persons: updated });
+      return newPerson;
+    } catch (err) {
+      console.error('Error al agregar persona:', err);
+      set({ error: 'Error al registrar la persona en la nube.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  // Actualizar persona
-  updatePerson: (id: string, input: PersonUpdateInput): void => {
-    const persons = get().persons.map((p) =>
-      p.id === id
-        ? { ...p, ...input, updatedAt: new Date().toISOString() }
-        : p
-    );
-    storage.save(persons);
-    set({ persons });
+  // Actualizar persona en Firestore
+  updatePerson: async (id: string, input: PersonUpdateInput, companyId: string): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      // Verificar que la persona existe y pertenece a esta compañía
+      const docRef = doc(db, 'persons', id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('Person not found');
+      }
+
+      const person = docSnap.data() as Person;
+      if (person.companyId !== companyId) {
+        throw new Error('Unauthorized: Person does not belong to your company');
+      }
+
+      const now = new Date().toISOString();
+      const updateData = {
+        ...input,
+        updatedAt: now,
+      };
+
+      await updateDoc(docRef, updateData);
+
+      const persons = get().persons.map((p) =>
+        p.id === id ? { ...p, ...input, updatedAt: now } : p
+      );
+      set({ persons });
+    } catch (err) {
+      console.error('Error al actualizar persona:', err);
+      set({ error: 'Error al actualizar los datos en la nube.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  // Eliminar persona
-  deletePerson: (id: string): void => {
-    const persons = get().persons.filter((p) => p.id !== id);
-    storage.save(persons);
-    set({ persons });
+  // Eliminar persona en Firestore
+  deletePerson: async (id: string, companyId: string): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      // Verificar que la persona existe y pertenece a esta compañía
+      const docRef = doc(db, 'persons', id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('Person not found');
+      }
+
+      const person = docSnap.data() as Person;
+      if (person.companyId !== companyId) {
+        throw new Error('Unauthorized: Cannot delete person from another company');
+      }
+
+      await deleteDoc(docRef);
+      const persons = get().persons.filter((p) => p.id !== id);
+      set({ persons });
+    } catch (err) {
+      console.error('Error al eliminar persona:', err);
+      set({ error: 'Error al eliminar el registro de la nube.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   // Eliminar múltiples personas
-  deleteMultiplePersons: (ids: string[]): void => {
-    const idSet = new Set(ids);
-    const persons = get().persons.filter((p) => !idSet.has(p.id));
-    storage.save(persons);
-    set({ persons });
+  deleteMultiplePersons: async (ids: string[], companyId: string): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      // Verificar que todas las personas existen y pertenecen a esta compañía
+      const verificationPromises = ids.map((id) => getDoc(doc(db, 'persons', id)));
+      const docSnapshots = await Promise.all(verificationPromises);
+
+      for (const docSnap of docSnapshots) {
+        if (!docSnap.exists()) {
+          throw new Error(`Person ${docSnap.id} not found`);
+        }
+        const person = docSnap.data() as Person;
+        if (person.companyId !== companyId) {
+          throw new Error(
+            `Unauthorized: Cannot delete person ${docSnap.id} from another company`
+          );
+        }
+      }
+
+      const batchSize = 450;
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = ids.slice(i, i + batchSize);
+        chunk.forEach((id) => {
+          batch.delete(doc(db, 'persons', id));
+        });
+        await batch.commit();
+      }
+
+      const idSet = new Set(ids);
+      const persons = get().persons.filter((p) => !idSet.has(p.id));
+      set({ persons });
+    } catch (err) {
+      console.error('Error al eliminar múltiples personas:', err);
+      set({ error: 'Error al eliminar los registros seleccionados.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   // Importar personas desde Excel
-  importPersons: (persons: Person[], replace = false): void => {
-    const current = replace ? [] : get().persons;
+  importPersons: async (personsData: PersonCreateInput[], companyId: string, replace = false): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      const current = replace ? [] : get().persons;
+      const existingCedulas = new Set(current.map((p) => p.cedula.toLowerCase()));
+      
+      // Filtrar registros duplicados por cédula (dentro de la misma empresa)
+      const newPersonsToImport = personsData.filter(
+        (p) => !existingCedulas.has(p.cedula.toLowerCase())
+      );
 
-    // Deduplicar por cédula al importar
-    const existingCedulas = new Set(current.map((p) => p.cedula.toLowerCase()));
-    const newPersons = persons.filter(
-      (p) => !existingCedulas.has(p.cedula.toLowerCase())
-    );
+      const operations: { ref: any; data?: any; type: 'set' | 'delete' }[] = [];
 
-    const updated = [...current, ...newPersons];
-    storage.save(updated);
-    set({ persons: updated });
+      // Si replace es true, eliminar todo lo actual primero
+      if (replace) {
+        const q = query(collection(db, 'persons'), where('companyId', '==', companyId));
+        const snap = await getDocs(q);
+        snap.forEach((docSnap) => {
+          operations.push({ ref: docSnap.ref, type: 'delete' });
+        });
+      }
+
+      const now = new Date().toISOString();
+      newPersonsToImport.forEach((p) => {
+        const id = uuidv4();
+        const newPerson: Person = {
+          ...p,
+          id,
+          companyId,
+          createdAt: now,
+          updatedAt: now,
+        };
+        operations.push({
+          ref: doc(db, 'persons', id),
+          data: newPerson,
+          type: 'set',
+        });
+      });
+
+      // Ejecutar en lotes de 450 para respetar los límites de Firestore batches
+      const batchSize = 450;
+      for (let i = 0; i < operations.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = operations.slice(i, i + batchSize);
+        chunk.forEach((op) => {
+          if (op.type === 'delete') {
+            batch.delete(op.ref);
+          } else if (op.type === 'set') {
+            batch.set(op.ref, op.data);
+          }
+        });
+        await batch.commit();
+      }
+
+      // Volver a cargar para sincronizar el estado local
+      const q = query(collection(db, 'persons'), where('companyId', '==', companyId));
+      const snap = await getDocs(q);
+      const list: Person[] = [];
+      snap.forEach((docSnap) => {
+        list.push(docSnap.data() as Person);
+      });
+      set({ persons: list });
+    } catch (err: any) {
+      console.error('Error al importar personas:', err);
+      set({ error: 'Error al guardar los registros importados en la nube.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  // Limpiar todos los datos
-  clearAll: (): void => {
-    storage.clear();
-    set({ persons: [] });
+  // Limpiar todos los datos de la empresa
+  clearAll: async (companyId: string): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      const q = query(collection(db, 'persons'), where('companyId', '==', companyId));
+      const snap = await getDocs(q);
+      const operations: any[] = [];
+      snap.forEach((docSnap) => {
+        operations.push(docSnap.ref);
+      });
+
+      const batchSize = 450;
+      for (let i = 0; i < operations.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = operations.slice(i, i + batchSize);
+        chunk.forEach((ref) => {
+          batch.delete(ref);
+        });
+        await batch.commit();
+      }
+
+      set({ persons: [] });
+    } catch (err) {
+      console.error('Error al vaciar la base de datos:', err);
+      set({ error: 'Error al vaciar los registros de la nube.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   // Helpers de estado
@@ -134,7 +324,7 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
 }));
 
 // -------------------------------------------------------
-// Selectores derivados (memoizados externamente con useMemo)
+// Selectores derivados
 // -------------------------------------------------------
 export const selectPersonById = (id: string) => (state: PersonStore) =>
   state.persons.find((p) => p.id === id);
