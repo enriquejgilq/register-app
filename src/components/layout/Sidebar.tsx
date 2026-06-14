@@ -26,38 +26,33 @@ import {
   LogoutOutlined,
   AdminPanelSettingsOutlined,
 } from '@mui/icons-material';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
-export type ModuleType = 'dashboard' | 'persons' | 'company-settings';
-
 interface SidebarProps {
-  activeModule: ModuleType;
-  onModuleChange: (module: ModuleType) => void;
   drawerWidth?: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeModule,
-  onModuleChange,
-  drawerWidth = 260,
-}) => {
+export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
   const { userProfile, company, logout } = useAuthStore();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems = [
     {
-      id: 'dashboard' as ModuleType,
+      path: '/dashboard',
       label: 'Inicio',
       icon: <DashboardOutlined />,
       roles: ['admin', 'collaborator'],
     },
     {
-      id: 'persons' as ModuleType,
+      path: '/persons',
       label: 'Registro de Personas',
       icon: <PeopleAltOutlined />,
       roles: ['admin', 'collaborator'],
     },
     {
-      id: 'company-settings' as ModuleType,
+      path: '/settings',
       label: 'Ajustes de Empresa',
       icon: <BusinessOutlined />,
       roles: ['admin'], // Solo admins pueden ver los ajustes de empresa
@@ -155,12 +150,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Menú de Navegación */}
         <List sx={{ px: 1 }}>
           {filteredMenuItems.map((item) => {
-            const isSelected = activeModule === item.id;
+            const isSelected = location.pathname === item.path;
             return (
-              <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
+              <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   selected={isSelected}
-                  onClick={() => onModuleChange(item.id)}
+                  onClick={() => navigate(item.path)}
                   sx={{
                     borderRadius: 2,
                     py: 1,
