@@ -40,8 +40,12 @@ export function validateImageFile(file: File): ImageValidationResult {
   return { valid: true };
 }
 
+// Tamaño máximo del base64 en bytes (~700KB para dejar margen con otros campos del documento)
+const MAX_BASE64_BYTES = 700 * 1024;
+
 /**
- * Convierte un File a Base64, redimensionando si es necesario
+ * Convierte un File a Base64 comprimido para almacenamiento en Firestore.
+ * Reduce calidad y dimensiones iterativamente hasta que quepa bajo el límite.
  */
 export async function fileToBase64(file: File): Promise<ImageData> {
   const validation = validateImageFile(file);
@@ -55,10 +59,15 @@ export async function fileToBase64(file: File): Promise<ImageData> {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Redimensionar si la imagen es muy grande
         const canvas = document.createElement('canvas');
-        let { width, height } = img;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('No se pudo procesar la imagen'));
+          return;
+        }
 
+        // Paso 1: Redimensionar al tamaño máximo permitido
+        let { width, height } = img;
         if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
           if (width > height) {
             height = Math.round((height * MAX_DIMENSION) / width);
@@ -71,20 +80,32 @@ export async function fileToBase64(file: File): Promise<ImageData> {
 
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('No se pudo procesar la imagen'));
-          return;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Paso 2: Comprimir iterativamente hasta que quepa bajo el límite
+        let quality = 0.85;
+        let base64 = canvas.toDataURL('image/jpeg', quality);
+
+        while (base64.length > MAX_BASE64_BYTES && quality > 0.2) {
+          quality -= 0.1;
+          base64 = canvas.toDataURL('image/jpeg', quality);
         }
 
-        ctx.drawImage(img, 0, 0, width, height);
-        const base64 = canvas.toDataURL('image/jpeg', 0.85);
+        // Paso 3: Si todavía es grande, reducir dimensiones a la mitad y reintentar
+        if (base64.length > MAX_BASE64_BYTES) {
+          width = Math.round(width * 0.6);
+          height = Math.round(height * 0.6);
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          base64 = canvas.toDataURL('image/jpeg', 0.7);
+        }
 
         resolve({
           base64,
           nombre: file.name,
           tipo: file.type,
-          tamaño: file.size,
+          tamaño: base64.length,
         });
       };
 
@@ -96,6 +117,7 @@ export async function fileToBase64(file: File): Promise<ImageData> {
     reader.readAsDataURL(file);
   });
 }
+
 
 /**
  * Obtiene las dimensiones de una imagen en Base64

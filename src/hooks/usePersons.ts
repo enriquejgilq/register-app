@@ -4,8 +4,10 @@
 
 import { useMemo, useState } from 'react';
 import { usePersonStore } from '../store/personStore';
-import type { PersonStore } from '../store/personStore';
-import type { Person } from '../models/Person';
+import type { Person, PersonCreateInput } from '../models/Person';
+import { useAuthStore } from '../store/authStore';
+
+export type PersonCategoryFilter = 'all' | 'conFoto' | 'conCorreo' | 'conRif';
 
 export interface UsePersonsOptions {
   pageSize?: number;
@@ -14,6 +16,8 @@ export interface UsePersonsOptions {
 export interface UsePersonsReturn {
   // Datos
   persons: Person[];
+  activePersons: Person[];
+  deletedPersons: Person[];
   filteredPersons: Person[];
   paginatedPersons: Person[];
   totalPersons: number;
@@ -30,37 +34,48 @@ export interface UsePersonsReturn {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
+  // Filtro de categoría
+  categoryFilter: PersonCategoryFilter;
+  setCategoryFilter: (filter: PersonCategoryFilter) => void;
+
   // Estado
   isLoading: boolean;
   error: string | null;
 
-  // Acciones
-  addPerson: PersonStore['addPerson'];
-  updatePerson: PersonStore['updatePerson'];
-  deletePerson: PersonStore['deletePerson'];
-  deleteMultiplePersons: PersonStore['deleteMultiplePersons'];
-  importPersons: PersonStore['importPersons'];
-  clearAll: PersonStore['clearAll'];
+  // Acciones (con companyId inyectado automáticamente)
+  addPerson: (input: PersonCreateInput) => Promise<Person>;
+  updatePerson: (id: string, input: any) => Promise<void>;
+  deletePerson: (id: string) => Promise<void>;
+  deleteMultiplePersons: (ids: string[]) => Promise<void>;
+  restorePerson: (id: string) => Promise<void>;
+  permanentlyDeletePerson: (id: string) => Promise<void>;
+  importPersons: (persons: PersonCreateInput[], replace?: boolean) => Promise<void>;
+  clearAll: () => Promise<void>;
 }
 
 export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
   const { pageSize: initialPageSize = 10 } = options;
+  const company = useAuthStore((s) => s.company);
+  const companyId = company?.id || '';
 
   const {
     persons,
     isLoading,
     error,
-    addPerson,
-    updatePerson,
-    deletePerson,
-    deleteMultiplePersons,
-    importPersons,
-    clearAll,
+    addPerson: storeAddPerson,
+    updatePerson: storeUpdatePerson,
+    deletePerson: storeDeletePerson,
+    deleteMultiplePersons: storeDeleteMultiplePersons,
+    restorePerson: storeRestorePerson,
+    permanentlyDeletePerson: storePermanentlyDeletePerson,
+    importPersons: storeImportPersons,
+    clearAll: storeClearAll,
   } = usePersonStore();
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSizeState] = useState(initialPageSize);
   const [searchQuery, setSearchQueryState] = useState('');
+  const [categoryFilter, setCategoryFilterState] = useState<PersonCategoryFilter>('all');
 
   const setPageSize = (size: number) => {
     setPageSizeState(size);
@@ -72,17 +87,48 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     setPage(0);
   };
 
-  // Filtrado multi-campo
+  const setCategoryFilter = (filter: PersonCategoryFilter) => {
+    setCategoryFilterState(filter);
+    setPage(0);
+  };
+
+  // Personas activas (no eliminadas) y personas en la papelera
+  const activePersons = useMemo(
+    () => persons.filter((p) => p.deleted !== true),
+    [persons]
+  );
+  const deletedPersons = useMemo(
+    () => persons.filter((p) => p.deleted === true),
+    [persons]
+  );
+
+  // Filtrado por categoría + búsqueda multi-campo
   const filteredPersons = useMemo(() => {
-    if (!searchQuery.trim()) return persons;
+    let result = activePersons;
+
+    switch (categoryFilter) {
+      case 'conFoto':
+        result = result.filter((p) => !!p.fotoBase64);
+        break;
+      case 'conCorreo':
+        result = result.filter((p) => !!p.correo);
+        break;
+      case 'conRif':
+        result = result.filter((p) => !!p.rif);
+        break;
+      default:
+        break;
+    }
+
+    if (!searchQuery.trim()) return result;
 
     const query = searchQuery.toLowerCase().trim();
-    return persons.filter((p) =>
+    return result.filter((p) =>
       [p.nombre, p.apellido, p.cedula, p.telefono, p.rif, p.correo].some(
         (field) => field?.toLowerCase().includes(query)
       )
     );
-  }, [persons, searchQuery]);
+  }, [activePersons, searchQuery, categoryFilter]);
 
   // Paginación
   const totalPages = Math.ceil(filteredPersons.length / pageSize);
@@ -92,11 +138,24 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     return filteredPersons.slice(start, start + pageSize);
   }, [filteredPersons, page, pageSize]);
 
+  // Envolturas para inyectar companyId automáticamente
+  const addPerson = (input: PersonCreateInput) => storeAddPerson(input, companyId);
+  const updatePerson = (id: string, input: any) => storeUpdatePerson(id, input, companyId);
+  const deletePerson = (id: string) => storeDeletePerson(id, companyId);
+  const deleteMultiplePersons = (ids: string[]) => storeDeleteMultiplePersons(ids, companyId);
+  const restorePerson = (id: string) => storeRestorePerson(id, companyId);
+  const permanentlyDeletePerson = (id: string) => storePermanentlyDeletePerson(id, companyId);
+  const importPersons = (personsList: PersonCreateInput[], replace?: boolean) =>
+    storeImportPersons(personsList, companyId, replace);
+  const clearAll = () => storeClearAll(companyId);
+
   return {
     persons,
+    activePersons,
+    deletedPersons,
     filteredPersons,
     paginatedPersons,
-    totalPersons: persons.length,
+    totalPersons: activePersons.length,
     totalFiltered: filteredPersons.length,
     page,
     pageSize,
@@ -105,12 +164,16 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     setPageSize,
     searchQuery,
     setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
     isLoading,
     error,
     addPerson,
     updatePerson,
     deletePerson,
     deleteMultiplePersons,
+    restorePerson,
+    permanentlyDeletePerson,
     importPersons,
     clearAll,
   };

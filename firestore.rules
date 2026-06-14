@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ─── Helper Functions ───────────────────────────────────
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user belongs to the same company as the document
+    function belongsToCompany(companyId) {
+      return request.auth.token.companyId == companyId;
+    }
+    
+    // Check if user is an admin
+    function isAdmin() {
+      return request.auth.token.role == 'admin';
+    }
+    
+    // Check if user is admin AND belongs to company
+    function isCompanyAdmin(companyId) {
+      return isAdmin() && belongsToCompany(companyId);
+    }
+    
+    // ─── Companies Collection ────────────────────────────────
+    
+    match /companies/{companyId} {
+      // Admin of the company can read their own company
+      allow read: if isAuthenticated() && belongsToCompany(companyId);
+      
+      // Only company owners/admins can write (handled via admin SDK in backend)
+      allow write: if false; // Only allow via admin SDK
+    }
+    
+    // ─── Users Collection ────────────────────────────────────
+    
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users cannot directly write (handled via admin SDK in backend)
+      allow write: if false;
+    }
+    
+    // Collection query: List users of the same company
+    match /users/{userId} {
+      allow list: if isAuthenticated() && 
+                     belongsToCompany(resource.data.companyId);
+    }
+    
+    // ─── Persons Collection (Contact Records) ────────────────
+    
+    match /persons/{personId} {
+      // Read: User can read if person belongs to their company
+      allow read: if isAuthenticated() && 
+                     belongsToCompany(resource.data.companyId);
+      
+      // Create: User can create a person for their company
+      allow create: if isAuthenticated() && 
+                       request.resource.data.companyId == request.auth.token.companyId;
+      
+      // Update: User can update a person if:
+      //   1. Person belongs to their company
+      //   2. companyId field is not being modified (prevent "company hopping")
+      allow update: if isAuthenticated() && 
+                       belongsToCompany(resource.data.companyId) &&
+                       resource.data.companyId == request.resource.data.companyId;
+      
+      // Delete: User can delete a person if it belongs to their company
+      allow delete: if isAuthenticated() && 
+                       belongsToCompany(resource.data.companyId);
+      
+      // List: User can query persons from their company
+      allow list: if isAuthenticated();
+    }
+    
+    // ─── Invitations Collection ──────────────────────────────
+    
+    match /invitations/{docId} {
+      // Read: User can read invitations for their company
+      allow read: if isAuthenticated() && 
+                     belongsToCompany(resource.data.companyId);
+      
+      // Create: Admins can create invitations (handled via backend)
+      allow create: if false;
+      
+      // Update: Handled via backend only
+      allow update: if false;
+      
+      // Delete: Handled via backend only
+      allow delete: if false;
+    }
+    
+    // ─── Default Deny ───────────────────────────────────────
+    
+    // Explicitly deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

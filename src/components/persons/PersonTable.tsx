@@ -26,6 +26,8 @@ import {
 } from '@mui/material';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
+import RestoreFromTrashRoundedIcon from '@mui/icons-material/RestoreFromTrashRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
@@ -43,8 +45,11 @@ interface PersonTableProps {
   page: number;
   pageSize: number;
   isLoading?: boolean;
-  onEdit: (person: Person) => void;
-  onDelete: (id: string) => void;
+  mode?: 'normal' | 'trash';
+  onEdit?: (person: Person) => void;
+  onDelete?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  onPermanentDelete?: (id: string) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
 }
@@ -55,8 +60,11 @@ export const PersonTable: React.FC<PersonTableProps> = ({
   page,
   pageSize,
   isLoading = false,
+  mode = 'normal',
   onEdit,
   onDelete,
+  onRestore,
+  onPermanentDelete,
   onPageChange,
   onPageSizeChange,
 }) => {
@@ -131,10 +139,12 @@ export const PersonTable: React.FC<PersonTableProps> = ({
       >
         <BadgeRoundedIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
         <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600 }} gutterBottom>
-          No hay registros
+          {mode === 'trash' ? 'La papelera está vacía' : 'No hay registros'}
         </Typography>
         <Typography variant="body2" color="text.disabled">
-          Agrega personas manualmente o importa un archivo Excel
+          {mode === 'trash'
+            ? 'Los registros eliminados aparecerán aquí'
+            : 'Agrega personas manualmente o importa un archivo Excel'}
         </Typography>
       </Paper>
     );
@@ -300,37 +310,75 @@ export const PersonTable: React.FC<PersonTableProps> = ({
                   {/* Acciones */}
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title="Editar">
-                        <IconButton
-                          size="small"
-                          onClick={() => onEdit(person)}
-                          id={`edit-btn-${person.id}`}
-                          sx={{
-                            color: 'primary.main',
-                            '&:hover': {
-                              background: (theme) => alpha(theme.palette.primary.main, 0.12),
-                            },
-                          }}
-                        >
-                          <EditRoundedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {mode === 'trash' ? (
+                        <>
+                          <Tooltip title="Restaurar">
+                            <IconButton
+                              size="small"
+                              onClick={() => onRestore?.(person.id)}
+                              id={`restore-btn-${person.id}`}
+                              sx={{
+                                color: 'success.main',
+                                '&:hover': {
+                                  background: (theme) => alpha(theme.palette.success.main, 0.12),
+                                },
+                              }}
+                            >
+                              <RestoreFromTrashRoundedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
 
-                      <Tooltip title="Eliminar">
-                        <IconButton
-                          size="small"
-                          onClick={() => setDeleteTarget(person)}
-                          id={`delete-btn-${person.id}`}
-                          sx={{
-                            color: 'error.main',
-                            '&:hover': {
-                              background: (theme) => alpha(theme.palette.error.main, 0.12),
-                            },
-                          }}
-                        >
-                          <DeleteRoundedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                          <Tooltip title="Eliminar permanentemente">
+                            <IconButton
+                              size="small"
+                              onClick={() => setDeleteTarget(person)}
+                              id={`permanent-delete-btn-${person.id}`}
+                              sx={{
+                                color: 'error.main',
+                                '&:hover': {
+                                  background: (theme) => alpha(theme.palette.error.main, 0.12),
+                                },
+                              }}
+                            >
+                              <DeleteForeverRoundedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <>
+                          <Tooltip title="Editar">
+                            <IconButton
+                              size="small"
+                              onClick={() => onEdit?.(person)}
+                              id={`edit-btn-${person.id}`}
+                              sx={{
+                                color: 'primary.main',
+                                '&:hover': {
+                                  background: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                },
+                              }}
+                            >
+                              <EditRoundedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title="Eliminar">
+                            <IconButton
+                              size="small"
+                              onClick={() => setDeleteTarget(person)}
+                              id={`delete-btn-${person.id}`}
+                              sx={{
+                                color: 'error.main',
+                                '&:hover': {
+                                  background: (theme) => alpha(theme.palette.error.main, 0.12),
+                                },
+                              }}
+                            >
+                              <DeleteRoundedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -362,13 +410,21 @@ export const PersonTable: React.FC<PersonTableProps> = ({
       {/* Modal de confirmación de eliminación */}
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="Eliminar persona"
-        message={`¿Estás seguro de que deseas eliminar a "${deleteTarget?.nombre} ${deleteTarget?.apellido}"? Esta acción no se puede deshacer.`}
+        title={mode === 'trash' ? 'Eliminar permanentemente' : 'Eliminar persona'}
+        message={
+          mode === 'trash'
+            ? `¿Estás seguro de que deseas eliminar permanentemente a "${deleteTarget?.nombre} ${deleteTarget?.apellido}"? Esta acción no se puede deshacer y el registro se borrará para siempre.`
+            : `¿Estás seguro de que deseas eliminar a "${deleteTarget?.nombre} ${deleteTarget?.apellido}"? El registro se moverá a la papelera.`
+        }
         confirmLabel="Eliminar"
         severity="error"
         onConfirm={() => {
           if (deleteTarget) {
-            onDelete(deleteTarget.id);
+            if (mode === 'trash') {
+              onPermanentDelete?.(deleteTarget.id);
+            } else {
+              onDelete?.(deleteTarget.id);
+            }
             setDeleteTarget(null);
           }
         }}
