@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { useAuthStore } from '../../store/authStore';
 import { usePersonStore } from '../../store/personStore';
+import { PersonStatsCharts } from './PersonStatsCharts';
 
 interface DashboardHomeProps {
   onNavigate: (module: 'persons' | 'company-settings') => void;
@@ -141,6 +142,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
             </Card>
           </Grid>
         </Grid>
+
+        {/* Gráficas de Estadísticas */}
+        <PersonStatsCharts persons={persons} />
 
         <Grid container spacing={4}>
           {/* Columna Izquierda: Accesos Rápidos */}

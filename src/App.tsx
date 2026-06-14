@@ -57,6 +57,8 @@ export default function App() {
     setPageSize,
     searchQuery,
     setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
     isLoading,
     addPerson,
     updatePerson,
@@ -313,35 +315,49 @@ export default function App() {
                       value: totalPersons,
                       color: '#6366f1',
                       icon: '👥',
+                      filterKey: 'all' as const,
                     },
                     {
                       label: 'Con Foto',
                       value: filteredPersons.filter((p) => p.fotoBase64).length,
                       color: '#34d399',
                       icon: '🪪',
+                      filterKey: 'conFoto' as const,
                     },
                     {
                       label: 'Con Correo',
                       value: filteredPersons.filter((p) => p.correo).length,
                       color: '#60a5fa',
                       icon: '📧',
+                      filterKey: 'conCorreo' as const,
                     },
                     {
                       label: 'Con RIF',
                       value: filteredPersons.filter((p) => p.rif).length,
                       color: '#fbbf24',
                       icon: '📋',
+                      filterKey: 'conRif' as const,
                     },
-                  ].map((stat) => (
+                  ].map((stat) => {
+                    const isActive = categoryFilter === stat.filterKey;
+                    return (
                     <Box
                       key={stat.label}
+                      onClick={() =>
+                        setCategoryFilter(isActive ? 'all' : stat.filterKey)
+                      }
                       sx={{
                         p: { xs: 2, md: 2.5 },
                         borderRadius: 3,
-                        background: (theme) => alpha(theme.palette.background.paper, 0.6),
-                        border: `1px solid ${alpha(stat.color, 0.2)}`,
+                        cursor: 'pointer',
+                        background: (theme) =>
+                          isActive
+                            ? alpha(stat.color, 0.12)
+                            : alpha(theme.palette.background.paper, 0.6),
+                        border: `1px solid ${alpha(stat.color, isActive ? 0.8 : 0.2)}`,
+                        boxShadow: isActive ? `0 0 0 1px ${alpha(stat.color, 0.4)}` : 'none',
                         backdropFilter: 'blur(10px)',
-                        transition: 'border-color 0.2s ease',
+                        transition: 'border-color 0.2s ease, background 0.2s ease',
                         '&:hover': {
                           borderColor: alpha(stat.color, 0.5),
                         },
@@ -362,7 +378,8 @@ export default function App() {
                         {stat.label}
                       </Typography>
                     </Box>
-                  ))}
+                    );
+                  })}
                 </Box>
 
                 {/* Barra de búsqueda */}

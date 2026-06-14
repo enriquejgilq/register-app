@@ -8,6 +8,8 @@ import type { PersonStore } from '../store/personStore';
 import type { Person, PersonCreateInput } from '../models/Person';
 import { useAuthStore } from '../store/authStore';
 
+export type PersonCategoryFilter = 'all' | 'conFoto' | 'conCorreo' | 'conRif';
+
 export interface UsePersonsOptions {
   pageSize?: number;
 }
@@ -30,6 +32,10 @@ export interface UsePersonsReturn {
   // Búsqueda
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+
+  // Filtro de categoría
+  categoryFilter: PersonCategoryFilter;
+  setCategoryFilter: (filter: PersonCategoryFilter) => void;
 
   // Estado
   isLoading: boolean;
@@ -64,6 +70,7 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSizeState] = useState(initialPageSize);
   const [searchQuery, setSearchQueryState] = useState('');
+  const [categoryFilter, setCategoryFilterState] = useState<PersonCategoryFilter>('all');
 
   const setPageSize = (size: number) => {
     setPageSizeState(size);
@@ -75,17 +82,38 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     setPage(0);
   };
 
-  // Filtrado multi-campo
+  const setCategoryFilter = (filter: PersonCategoryFilter) => {
+    setCategoryFilterState(filter);
+    setPage(0);
+  };
+
+  // Filtrado por categoría + búsqueda multi-campo
   const filteredPersons = useMemo(() => {
-    if (!searchQuery.trim()) return persons;
+    let result = persons;
+
+    switch (categoryFilter) {
+      case 'conFoto':
+        result = result.filter((p) => !!p.fotoBase64);
+        break;
+      case 'conCorreo':
+        result = result.filter((p) => !!p.correo);
+        break;
+      case 'conRif':
+        result = result.filter((p) => !!p.rif);
+        break;
+      default:
+        break;
+    }
+
+    if (!searchQuery.trim()) return result;
 
     const query = searchQuery.toLowerCase().trim();
-    return persons.filter((p) =>
+    return result.filter((p) =>
       [p.nombre, p.apellido, p.cedula, p.telefono, p.rif, p.correo].some(
         (field) => field?.toLowerCase().includes(query)
       )
     );
-  }, [persons, searchQuery]);
+  }, [persons, searchQuery, categoryFilter]);
 
   // Paginación
   const totalPages = Math.ceil(filteredPersons.length / pageSize);
@@ -117,6 +145,8 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     setPageSize,
     searchQuery,
     setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
     isLoading,
     error,
     addPerson,
