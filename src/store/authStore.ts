@@ -231,6 +231,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     set({ isLoading: true });
     try {
       await signOut(auth);
+      clearPersonStore();
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
     } finally {

@@ -4,7 +4,6 @@
 
 import { useMemo, useState } from 'react';
 import { usePersonStore } from '../store/personStore';
-import type { PersonStore } from '../store/personStore';
 import type { Person, PersonCreateInput } from '../models/Person';
 import { useAuthStore } from '../store/authStore';
 

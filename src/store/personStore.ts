@@ -20,11 +20,11 @@ import {
 import { db } from '../config/firebase';
 
 // Elimina las propiedades con valor `undefined`, ya que Firestore no las acepta
-function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+function stripUndefined<T extends object>(obj: T): T {
   const result = {} as T;
-  Object.entries(obj).forEach(([key, value]) => {
+  (Object.entries(obj) as [keyof T, T[keyof T]][]).forEach(([key, value]) => {
     if (value !== undefined) {
-      (result as Record<string, unknown>)[key] = value;
+      result[key] = value;
     }
   });
   return result;
