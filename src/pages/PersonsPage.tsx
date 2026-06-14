@@ -219,7 +219,7 @@ export default function PersonsPage() {
           onClose={() => setImportModalOpen(false)}
           onImport={handleImport}
           onDownloadTemplate={downloadTemplate}
-          isLoading={isImporting}
+          isLoading={isImporting || isLoading}
         />
 
         {/* Confirmación de limpiar todo */}

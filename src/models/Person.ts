@@ -15,6 +15,8 @@ export interface Person {
   fotoNombre?: string;   // Nombre original del archivo de imagen
   createdAt: string;     // ISO date string
   updatedAt: string;     // ISO date string
+  deleted?: boolean;     // Borrado lógico (soft delete)
+  deletedAt?: string | null; // ISO date string del borrado lógico
 }
 
 export type PersonFormData = Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'companyId'>;
@@ -36,7 +38,7 @@ export const SEARCHABLE_FIELDS: SearchableField[] = [
 ];
 
 // Mapa de labels de campos para la UI
-export const FIELD_LABELS: Record<keyof Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'fotoBase64' | 'fotoNombre' | 'companyId'>, string> = {
+export const FIELD_LABELS: Record<keyof Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'fotoBase64' | 'fotoNombre' | 'companyId' | 'deleted' | 'deletedAt'>, string> = {
   nombre: 'Nombre',
   apellido: 'Apellido',
   cedula: 'Cédula de Identidad',

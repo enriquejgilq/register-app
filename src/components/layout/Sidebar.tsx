@@ -25,6 +25,7 @@ import {
   BusinessOutlined,
   LogoutOutlined,
   AdminPanelSettingsOutlined,
+  DeleteOutlineRounded,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
@@ -49,6 +50,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
       path: '/persons',
       label: 'Registro de Personas',
       icon: <PeopleAltOutlined />,
+      roles: ['admin', 'collaborator'],
+    },
+    {
+      path: '/papelera',
+      label: 'Papelera',
+      icon: <DeleteOutlineRounded />,
       roles: ['admin', 'collaborator'],
     },
     {

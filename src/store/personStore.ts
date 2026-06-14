@@ -18,7 +18,6 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { deletePersonImage } from '../services/storageService';
 
 // Elimina las propiedades con valor `undefined`, ya que Firestore no las acepta
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -49,6 +48,8 @@ interface PersonActions {
   updatePerson: (id: string, input: PersonUpdateInput, companyId: string) => Promise<void>;
   deletePerson: (id: string, companyId: string) => Promise<void>;
   deleteMultiplePersons: (ids: string[], companyId: string) => Promise<void>;
+  restorePerson: (id: string, companyId: string) => Promise<void>;
+  permanentlyDeletePerson: (id: string, companyId: string) => Promise<void>;
 
   // Importación masiva
   importPersons: (persons: PersonCreateInput[], companyId: string, replace?: boolean) => Promise<void>;
@@ -102,6 +103,7 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
         companyId,
         createdAt: now,
         updatedAt: now,
+        deleted: false,
       };
 
       await setDoc(doc(db, 'persons', id), stripUndefined(newPerson));
@@ -173,13 +175,12 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
         throw new Error('Unauthorized: Cannot delete person from another company');
       }
 
-      // Borrar imagen de Storage si existe
-      if (person.fotoPath) {
-        await deletePersonImage(person.fotoPath);
-      }
+      const now = new Date().toISOString();
+      await updateDoc(docRef, { deleted: true, deletedAt: now, updatedAt: now });
 
-      await deleteDoc(docRef);
-      const persons = get().persons.filter((p) => p.id !== id);
+      const persons = get().persons.map((p) =>
+        p.id === id ? { ...p, deleted: true, deletedAt: now, updatedAt: now } : p
+      );
       set({ persons });
     } catch (err) {
       console.error('Error al eliminar persona:', err);
@@ -210,29 +211,85 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
         }
       }
 
+      const now = new Date().toISOString();
       const batchSize = 450;
-      // Borrar imágenes de Storage en paralelo (no bloqueante para el batch)
-      const imageDeletions = docSnapshots
-        .map((docSnap) => (docSnap.data() as Person).fotoPath)
-        .filter(Boolean)
-        .map((path) => deletePersonImage(path!));
-      await Promise.allSettled(imageDeletions);
-
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = writeBatch(db);
         const chunk = ids.slice(i, i + batchSize);
         chunk.forEach((id) => {
-          batch.delete(doc(db, 'persons', id));
+          batch.update(doc(db, 'persons', id), { deleted: true, deletedAt: now, updatedAt: now });
         });
         await batch.commit();
       }
 
       const idSet = new Set(ids);
-      const persons = get().persons.filter((p) => !idSet.has(p.id));
+      const persons = get().persons.map((p) =>
+        idSet.has(p.id) ? { ...p, deleted: true, deletedAt: now, updatedAt: now } : p
+      );
       set({ persons });
     } catch (err) {
       console.error('Error al eliminar múltiples personas:', err);
       set({ error: 'Error al eliminar los registros seleccionados.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Restaurar persona desde la papelera
+  restorePerson: async (id: string, companyId: string): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      const docRef = doc(db, 'persons', id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('Person not found');
+      }
+
+      const person = docSnap.data() as Person;
+      if (person.companyId !== companyId) {
+        throw new Error('Unauthorized: Cannot restore person from another company');
+      }
+
+      const now = new Date().toISOString();
+      await updateDoc(docRef, { deleted: false, deletedAt: null, updatedAt: now });
+
+      const persons = get().persons.map((p) =>
+        p.id === id ? { ...p, deleted: false, deletedAt: null, updatedAt: now } : p
+      );
+      set({ persons });
+    } catch (err) {
+      console.error('Error al restaurar persona:', err);
+      set({ error: 'Error al restaurar el registro desde la papelera.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Eliminar persona de forma permanente (desde la papelera)
+  permanentlyDeletePerson: async (id: string, companyId: string): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      const docRef = doc(db, 'persons', id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('Person not found');
+      }
+
+      const person = docSnap.data() as Person;
+      if (person.companyId !== companyId) {
+        throw new Error('Unauthorized: Cannot delete person from another company');
+      }
+
+      await deleteDoc(docRef);
+      const persons = get().persons.filter((p) => p.id !== id);
+      set({ persons });
+    } catch (err) {
+      console.error('Error al eliminar permanentemente la persona:', err);
+      set({ error: 'Error al eliminar permanentemente el registro.' });
       throw err;
     } finally {
       set({ isLoading: false });

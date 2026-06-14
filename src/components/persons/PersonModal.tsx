@@ -17,6 +17,7 @@ import {
   Divider,
   Alert,
   alpha,
+  CircularProgress,
 } from '@mui/material';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
@@ -32,7 +33,7 @@ interface PersonModalProps {
   open: boolean;
   editPerson?: Person | null;
   existingPersons?: Person[];
-  onSave: (data: PersonCreateInput) => void;
+  onSave: (data: PersonCreateInput) => Promise<void>;
   onClose: () => void;
 }
 
@@ -94,7 +95,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
     }
   }, [open, editPerson, reset]);
 
-  const onSubmit = (data: PersonSchemaType) => {
+  const onSubmit = async (data: PersonSchemaType) => {
     // Validar cédula única
     const cedulaNormalizada = data.cedula.trim().toLowerCase();
     const isDuplicate = existingPersons.some(p =>
@@ -110,7 +111,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
       return;
     }
 
-    onSave({
+    await onSave({
       nombre: data.nombre,
       apellido: data.apellido,
       cedula: data.cedula,
@@ -367,13 +368,13 @@ export const PersonModal: React.FC<PersonModalProps> = ({
         </Button>
         <Button
           variant="contained"
-          startIcon={<SaveRoundedIcon />}
+          startIcon={isSubmitting ? undefined : <SaveRoundedIcon />}
           id="person-modal-save-btn"
           disabled={isSubmitting}
           onClick={() => void handleSubmit(onSubmit)()}
           sx={{ minWidth: 140 }}
         >
-          {isEditing ? 'Guardar Cambios' : 'Registrar Persona'}
+          {isSubmitting ? <CircularProgress size={20} color="inherit" /> : (isEditing ? 'Guardar Cambios' : 'Registrar Persona')}
         </Button>
       </DialogActions>
     </Dialog>

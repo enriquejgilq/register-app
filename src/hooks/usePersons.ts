@@ -17,6 +17,8 @@ export interface UsePersonsOptions {
 export interface UsePersonsReturn {
   // Datos
   persons: Person[];
+  activePersons: Person[];
+  deletedPersons: Person[];
   filteredPersons: Person[];
   paginatedPersons: Person[];
   totalPersons: number;
@@ -46,6 +48,8 @@ export interface UsePersonsReturn {
   updatePerson: (id: string, input: any) => Promise<void>;
   deletePerson: (id: string) => Promise<void>;
   deleteMultiplePersons: (ids: string[]) => Promise<void>;
+  restorePerson: (id: string) => Promise<void>;
+  permanentlyDeletePerson: (id: string) => Promise<void>;
   importPersons: (persons: PersonCreateInput[], replace?: boolean) => Promise<void>;
   clearAll: () => Promise<void>;
 }
@@ -63,6 +67,8 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     updatePerson: storeUpdatePerson,
     deletePerson: storeDeletePerson,
     deleteMultiplePersons: storeDeleteMultiplePersons,
+    restorePerson: storeRestorePerson,
+    permanentlyDeletePerson: storePermanentlyDeletePerson,
     importPersons: storeImportPersons,
     clearAll: storeClearAll,
   } = usePersonStore();
@@ -87,9 +93,19 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     setPage(0);
   };
 
+  // Personas activas (no eliminadas) y personas en la papelera
+  const activePersons = useMemo(
+    () => persons.filter((p) => p.deleted !== true),
+    [persons]
+  );
+  const deletedPersons = useMemo(
+    () => persons.filter((p) => p.deleted === true),
+    [persons]
+  );
+
   // Filtrado por categoría + búsqueda multi-campo
   const filteredPersons = useMemo(() => {
-    let result = persons;
+    let result = activePersons;
 
     switch (categoryFilter) {
       case 'conFoto':
@@ -113,7 +129,7 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
         (field) => field?.toLowerCase().includes(query)
       )
     );
-  }, [persons, searchQuery, categoryFilter]);
+  }, [activePersons, searchQuery, categoryFilter]);
 
   // Paginación
   const totalPages = Math.ceil(filteredPersons.length / pageSize);
@@ -128,15 +144,19 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
   const updatePerson = (id: string, input: any) => storeUpdatePerson(id, input, companyId);
   const deletePerson = (id: string) => storeDeletePerson(id, companyId);
   const deleteMultiplePersons = (ids: string[]) => storeDeleteMultiplePersons(ids, companyId);
+  const restorePerson = (id: string) => storeRestorePerson(id, companyId);
+  const permanentlyDeletePerson = (id: string) => storePermanentlyDeletePerson(id, companyId);
   const importPersons = (personsList: PersonCreateInput[], replace?: boolean) =>
     storeImportPersons(personsList, companyId, replace);
   const clearAll = () => storeClearAll(companyId);
 
   return {
     persons,
+    activePersons,
+    deletedPersons,
     filteredPersons,
     paginatedPersons,
-    totalPersons: persons.length,
+    totalPersons: activePersons.length,
     totalFiltered: filteredPersons.length,
     page,
     pageSize,
@@ -153,6 +173,8 @@ export function usePersons(options: UsePersonsOptions = {}): UsePersonsReturn {
     updatePerson,
     deletePerson,
     deleteMultiplePersons,
+    restorePerson,
+    permanentlyDeletePerson,
     importPersons,
     clearAll,
   };
