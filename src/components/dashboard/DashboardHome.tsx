@@ -5,6 +5,7 @@
 import React, { useEffect } from 'react';
 import {
   Box,
+  Container,
   Typography,
   Grid,
   Card,
@@ -71,7 +72,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
 
   return (
     <Fade in timeout={600}>
-      <Box>
+      <Container maxWidth="xl" disableGutters sx={{ width: '100%' }}>
         {/* Banner de Bienvenida */}
         <Box
           sx={{
@@ -290,7 +291,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
             </Card>
           </Grid>
         </Grid>
-      </Box>
+      </Container>
     </Fade>
   );
 };

@@ -65,7 +65,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/persons" element={<PersonsPage />} />
-          <Route path="/papelera" element={<PersonsTrashPage />} />
+          <Route path="/trash" element={<PersonsTrashPage />} />
           <Route path="/settings" element={<CompanySettingsPage />} />
           <Route index element={<Navigate to="/dashboard" replace />} />
         </Route>

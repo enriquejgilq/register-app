@@ -2,7 +2,9 @@
 // AppLayout — Shell de la aplicación autenticada (sidebar + contenido)
 // ============================================================
 
-import { Box } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
 import { LocalDataMigrationPrompt } from '../components/common/LocalDataMigrationPrompt';
@@ -10,6 +12,14 @@ import { LocalDataMigrationPrompt } from '../components/common/LocalDataMigratio
 const DRAWER_WIDTH = 260;
 
 export default function AppLayout() {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'));
+  const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
+
+  useEffect(() => {
+    setSidebarOpen(isDesktop);
+  }, [isDesktop]);
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex' }}>
       {/* Fondo decorativo */}
@@ -49,20 +59,49 @@ export default function AppLayout() {
       </Box>
 
       {/* Sidebar Navigation */}
-      <Sidebar drawerWidth={DRAWER_WIDTH} />
+      <Sidebar
+        drawerWidth={DRAWER_WIDTH}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        variant={isDesktop ? 'persistent' : 'temporary'}
+      />
+
+      {/* Botón flotante para reabrir el menú */}
+      {!sidebarOpen && (
+        <IconButton
+          onClick={() => setSidebarOpen(true)}
+          sx={{
+            position: 'fixed',
+            top: 16,
+            left: 16,
+            zIndex: (t) => t.zIndex.drawer + 1,
+            bgcolor: 'background.paper',
+            boxShadow: 2,
+            '&:hover': { bgcolor: 'background.paper' },
+          }}
+        >
+          <MenuRoundedIcon />
+        </IconButton>
+      )}
 
       {/* Contenido Principal Modular */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+          width: { sm: sidebarOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%' },
           minHeight: '100vh',
           p: { xs: 2, sm: 3, md: 4 },
           position: 'relative',
           zIndex: 1,
           display: 'flex',
           flexDirection: 'column',
+          transition: theme.transitions.create(['margin', 'width'], {
+            easing: theme.transitions.easing.sharp,
+            duration: sidebarOpen
+              ? theme.transitions.duration.enteringScreen
+              : theme.transitions.duration.leavingScreen,
+          }),
         }}
       >
         <Outlet />

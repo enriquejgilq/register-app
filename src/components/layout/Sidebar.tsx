@@ -26,15 +26,19 @@ import {
   LogoutOutlined,
   AdminPanelSettingsOutlined,
   DeleteOutlineRounded,
+  ChevronLeftOutlined,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 interface SidebarProps {
   drawerWidth?: number;
+  open: boolean;
+  onClose: () => void;
+  variant: 'persistent' | 'temporary';
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260, open, onClose, variant }) => {
   const { userProfile, company, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -53,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
       roles: ['admin', 'collaborator'],
     },
     {
-      path: '/papelera',
+      path: '/trash',
       label: 'Papelera',
       icon: <DeleteOutlineRounded />,
       roles: ['admin', 'collaborator'],
@@ -87,12 +91,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
       .toUpperCase();
   };
 
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (variant === 'temporary') {
+      onClose();
+    }
+  };
+
   return (
     <Drawer
-      variant="permanent"
+      variant={variant}
+      open={open}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
       sx={{
-        width: drawerWidth,
+        width: variant === 'persistent' && !open ? 0 : drawerWidth,
         flexShrink: 0,
+        overflowX: 'hidden',
+        transition: (theme) =>
+          theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
           boxSizing: 'border-box',
@@ -123,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
           >
             R
           </Box>
-          <Box>
+          <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
               RegisterApp
             </Typography>
@@ -131,6 +151,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
               v2.0 (Firebase Cloud)
             </Typography>
           </Box>
+          {variant === 'persistent' && (
+            <Tooltip title="Ocultar menú">
+              <IconButton onClick={onClose} size="small">
+                <ChevronLeftOutlined fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
 
         <Divider sx={{ mb: 2, opacity: 0.5 }} />
@@ -162,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
               <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   selected={isSelected}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => handleNavigate(item.path)}
                   sx={{
                     borderRadius: 2,
                     py: 1,
