@@ -35,6 +35,7 @@ import {
   PeopleOutlined,
   AdminPanelSettingsOutlined,
   BusinessOutlined,
+  ContactPhoneOutlined,
 } from '@mui/icons-material';
 import { useAuthStore } from '../../store/authStore';
 import { useSnackbar } from '../common/SnackbarAlert';
@@ -49,6 +50,7 @@ export const CompanySettings: React.FC = () => {
     inviteCollaborator,
     fetchCollaborators,
     updateCompanyName,
+    updateCompanyInfo,
     isLoading,
     isInitializing,
     error,
@@ -64,10 +66,21 @@ export const CompanySettings: React.FC = () => {
   const [isUpdatingCompany, setIsUpdatingCompany] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
 
+  // Estados de los datos de contacto de la empresa
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [taxId, setTaxId] = useState('');
+  const [isUpdatingInfo, setIsUpdatingInfo] = useState(false);
+
   // Inicializar nombre
   useEffect(() => {
     if (company) {
       setNewCompanyName(company.name);
+      setAddress(company.address ?? '');
+      setPhone(company.phone ?? '');
+      setContactEmail(company.contactEmail ?? '');
+      setTaxId(company.taxId ?? '');
     }
   }, [company]);
 
@@ -92,6 +105,28 @@ export const CompanySettings: React.FC = () => {
       setIsUpdatingCompany(false);
     }
   };
+
+  // Guardar datos de contacto de la empresa
+  const handleSaveCompanyInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setIsUpdatingInfo(true);
+    setError(null);
+    try {
+      await updateCompanyInfo({ address, phone, contactEmail, taxId });
+      showSuccess('✓ Datos de la empresa actualizados correctamente');
+    } catch {
+      showError('Error al actualizar los datos de la empresa');
+    } finally {
+      setIsUpdatingInfo(false);
+    }
+  };
+
+  const isCompanyInfoUnchanged =
+    address === (company?.address ?? '') &&
+    phone === (company?.phone ?? '') &&
+    contactEmail === (company?.contactEmail ?? '') &&
+    taxId === (company?.taxId ?? '');
 
   // Enviar invitación
   const handleSendInvite = async (e: React.FormEvent) => {
@@ -180,7 +215,7 @@ export const CompanySettings: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             
             {/* Tarjeta 1: Perfil / Nombre de la Empresa */}
-            <Card sx={{ background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+            <Card sx={{ background: (theme) => theme.palette.gradients.card }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   🏢 Datos de la Empresa
@@ -210,8 +245,63 @@ export const CompanySettings: React.FC = () => {
               </CardContent>
             </Card>
 
+            {/* Tarjeta 1.5: Datos de Contacto de la Empresa */}
+            <Card sx={{ background: (theme) => theme.palette.gradients.card }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ContactPhoneOutlined /> Datos de Contacto
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Box component="form" onSubmit={handleSaveCompanyInfo}>
+                  <TextField
+                    fullWidth
+                    label="Dirección"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    disabled={isUpdatingInfo || isLoading}
+                    sx={{ mb: 2.5 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Teléfono de Contacto"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={isUpdatingInfo || isLoading}
+                    sx={{ mb: 2.5 }}
+                  />
+                  <TextField
+                    fullWidth
+                    type="email"
+                    label="Correo de Contacto"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    disabled={isUpdatingInfo || isLoading}
+                    sx={{ mb: 2.5 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="RFC / NIT / Identificación Fiscal"
+                    value={taxId}
+                    onChange={(e) => setTaxId(e.target.value)}
+                    disabled={isUpdatingInfo || isLoading}
+                    sx={{ mb: 3 }}
+                  />
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={isUpdatingInfo || isLoading || isCompanyInfoUnchanged}
+                    startIcon={isUpdatingInfo ? <CircularProgress size={20} color="inherit" /> : <SaveOutlined />}
+                    sx={{ fontWeight: 700 }}
+                  >
+                    Guardar Cambios
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+
             {/* Tarjeta 2: Enviar Invitación */}
-            <Card sx={{ background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+            <Card sx={{ background: (theme) => theme.palette.gradients.card }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   ✉️ Invitar Colaborador
@@ -273,7 +363,7 @@ export const CompanySettings: React.FC = () => {
 
         {/* Lado Derecho: Lista de Colaboradores */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card sx={{ height: '100%', background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+          <Card sx={{ height: '100%', background: (theme) => theme.palette.gradients.card }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PeopleOutlined /> Miembros del Equipo ({collaborators.length})

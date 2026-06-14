@@ -23,7 +23,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, periodCount, data }) => {
   const hasData = data.some((d) => d.value > 0);
 
   return (
-    <Card sx={{ height: '100%', background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+    <Card sx={{ height: '100%', background: (theme) => theme.palette.gradients.card }}>
       <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1 }}>
           {title}

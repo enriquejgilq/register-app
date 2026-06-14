@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
       position="sticky"
       elevation={0}
       sx={{
-        background: 'linear-gradient(135deg, rgba(15,15,26,0.95) 0%, rgba(26,26,46,0.95) 100%)',
+        background: `linear-gradient(135deg, ${alpha(theme.palette.background.default, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${alpha('#6366f1', 0.2)}`,
         zIndex: (t) => t.zIndex.appBar,
@@ -84,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
               variant="h6"
               sx={{
                 fontWeight: 800,
-                background: 'linear-gradient(135deg, #e2e8f0, #a78bfa)',
+                background: `linear-gradient(135deg, ${theme.palette.text.primary}, ${theme.palette.secondary.main})`,
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',

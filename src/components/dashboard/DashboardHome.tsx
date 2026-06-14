@@ -82,7 +82,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
             mb: 4,
           }}
         >
-          <Typography variant="h3" sx={{ fontWeight: 800, mb: 1, color: '#e2e8f0' }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, mb: 1, color: 'text.primary' }}>
             ¡Hola, {userProfile?.name || 'Usuario'}! 👋
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -93,7 +93,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
         {/* Tarjetas de Estadísticas */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Card sx={{ background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+            <Card sx={{ background: (theme) => theme.palette.gradients.card }}>
               <CardContent sx={{ p: 3, display: 'flex', alignItems: 'center', justifycontent: 'space-between' }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1 }}>
@@ -118,7 +118,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Card sx={{ background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+            <Card sx={{ background: (theme) => theme.palette.gradients.card }}>
               <CardContent sx={{ p: 3, display: 'flex', alignItems: 'center', justifycontent: 'space-between' }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1 }}>
@@ -149,7 +149,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
         <Grid container spacing={4}>
           {/* Columna Izquierda: Accesos Rápidos */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <Card sx={{ height: '100%', background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+            <Card sx={{ height: '100%', background: (theme) => theme.palette.gradients.card }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   Acciones Rápidas
@@ -228,7 +228,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
 
           {/* Columna Derecha: Últimos Registros */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <Card sx={{ height: '100%', background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)' }}>
+            <Card sx={{ height: '100%', background: (theme) => theme.palette.gradients.card }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   Últimos Registros

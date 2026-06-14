@@ -44,7 +44,7 @@ export default function App() {
           justifyContent: 'center',
           alignItems: 'center',
           gap: 2,
-          background: 'linear-gradient(135deg, #0f0f1a 0%, #0d0d2b 50%, #0f0f1a 100%)',
+          background: (theme) => theme.palette.gradients.page,
         }}
       >
         <CircularProgress size={50} color="primary" />

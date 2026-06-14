@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#16162a',
+          backgroundColor: (theme) => theme.palette.background.paper,
           borderRight: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
           display: 'flex',
           flexDirection: 'column',
@@ -178,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ drawerWidth = 260 }) => {
                       },
                     },
                     '&:hover': {
-                      backgroundColor: alpha('#ffffff', 0.02),
+                      backgroundColor: alpha('#6366f1', 0.04),
                       color: 'text.primary',
                     },
                   }}

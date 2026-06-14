@@ -7,9 +7,14 @@ export interface Company {
   name: string;
   createdAt: string; // ISO date string
   ownerId: string;
+  address?: string;
+  phone?: string;
+  contactEmail?: string;
+  taxId?: string;
 }
 
 export type UserRole = 'admin' | 'collaborator';
+export type ThemeMode = 'light' | 'dark';
 
 export interface CompanyUser {
   uid: string;
@@ -18,6 +23,7 @@ export interface CompanyUser {
   companyId: string;
   role: UserRole;
   createdAt: string; // ISO date string
+  themePreference?: ThemeMode;
 }
 
 export interface Invitation {

@@ -78,7 +78,7 @@ export default function PersonsTrashPage() {
               variant="h6"
               sx={{
                 fontWeight: 800,
-                background: 'linear-gradient(135deg, #e2e8f0, #a78bfa)',
+                background: (theme) => `linear-gradient(135deg, ${theme.palette.text.primary}, ${theme.palette.secondary.main})`,
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',

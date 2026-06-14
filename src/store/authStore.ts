@@ -22,7 +22,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
-import type { Company, CompanyUser, UserRole, Invitation } from '../models/Company';
+import type { Company, CompanyUser, UserRole, Invitation, ThemeMode } from '../models/Company';
 
 // Importación diferida para evitar dependencia circular
 const clearPersonStore = () => {
@@ -56,6 +56,8 @@ interface AuthActions {
   inviteCollaborator: (email: string, role: UserRole) => Promise<void>;
   fetchCollaborators: () => Promise<void>;
   updateCompanyName: (name: string) => Promise<void>;
+  updateCompanyInfo: (data: Partial<Pick<Company, 'address' | 'phone' | 'contactEmail' | 'taxId'>>) => Promise<void>;
+  updateThemePreference: (mode: ThemeMode) => Promise<void>;
   setError: (err: string | null) => void;
 }
 
@@ -341,6 +343,45 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       throw err;
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  // Modificar Datos de Contacto de la Empresa (solo Admins)
+  updateCompanyInfo: async (data) => {
+    const { company, userProfile } = get();
+    if (!company || !userProfile || userProfile.role !== 'admin') {
+      throw new Error('No tienes permisos para modificar los datos de la empresa.');
+    }
+
+    set({ isLoading: true, error: null });
+    try {
+      const updates = {
+        address: data.address?.trim() ?? '',
+        phone: data.phone?.trim() ?? '',
+        contactEmail: data.contactEmail?.trim() ?? '',
+        taxId: data.taxId?.trim() ?? '',
+      };
+      await updateDoc(doc(db, 'companies', company.id), updates);
+      set({ company: { ...company, ...updates } });
+    } catch (err) {
+      console.error('Error al actualizar datos de la empresa:', err);
+      set({ error: 'No se pudieron actualizar los datos de la empresa.' });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Guardar preferencia de tema del usuario
+  updateThemePreference: async (mode) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+
+    set({ userProfile: { ...userProfile, themePreference: mode } });
+    try {
+      await updateDoc(doc(db, 'users', userProfile.uid), { themePreference: mode });
+    } catch (err) {
+      console.error('Error al guardar la preferencia de tema:', err);
     }
   },
 }));

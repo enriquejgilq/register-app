@@ -24,7 +24,7 @@ export default function AuthPage() {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        background: 'linear-gradient(135deg, #0f0f1a 0%, #0d0d2b 50%, #0f0f1a 100%)',
+        background: (theme) => theme.palette.gradients.page,
         p: 2,
       }}
     >

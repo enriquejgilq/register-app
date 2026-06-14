@@ -120,7 +120,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
             maxWidth: 440,
             borderRadius: 4,
             border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-            background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)',
+            background: (theme) => theme.palette.gradients.card,
             boxShadow: '0 15px 35px rgba(0,0,0,0.5)',
             backdropFilter: 'blur(20px)',
             p: 2,

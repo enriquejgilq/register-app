@@ -1,17 +1,16 @@
 // ============================================================
-// CompanySettingsPage — Ajustes de empresa (solo admins)
+// CompanySettingsPage — Preferencias del usuario y ajustes de empresa
 // ============================================================
 
-import { Navigate } from 'react-router-dom';
+import { Box } from '@mui/material';
 import { CompanySettings } from '../components/company/CompanySettings';
-import { useAuthStore } from '../store/authStore';
+import { UserPreferences } from '../components/company/UserPreferences';
 
 export default function CompanySettingsPage() {
-  const { userProfile } = useAuthStore();
-
-  if (userProfile && userProfile.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <CompanySettings />;
+  return (
+    <Box>
+      <UserPreferences />
+      <CompanySettings />
+    </Box>
+  );
 }
