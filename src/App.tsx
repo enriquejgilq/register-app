@@ -20,6 +20,8 @@ export default function App() {
   const { initializeAuth, isInitializing, company } = useAuthStore();
 
   // Inicializar observador de autenticación de Firebase al montar
+
+  
   useEffect(() => {
     const unsubscribe = initializeAuth();
     return () => unsubscribe();
