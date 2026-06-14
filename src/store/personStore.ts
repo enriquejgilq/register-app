@@ -18,6 +18,18 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { deletePersonImage } from '../services/storageService';
+
+// Elimina las propiedades con valor `undefined`, ya que Firestore no las acepta
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  const result = {} as T;
+  Object.entries(obj).forEach(([key, value]) => {
+    if (value !== undefined) {
+      (result as Record<string, unknown>)[key] = value;
+    }
+  });
+  return result;
+}
 
 // -------------------------------------------------------
 // Tipos del store
@@ -92,7 +104,7 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
         updatedAt: now,
       };
 
-      await setDoc(doc(db, 'persons', id), newPerson);
+      await setDoc(doc(db, 'persons', id), stripUndefined(newPerson));
       
       const updated = [...get().persons, newPerson];
       set({ persons: updated });
@@ -129,7 +141,7 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
         updatedAt: now,
       };
 
-      await updateDoc(docRef, updateData);
+      await updateDoc(docRef, stripUndefined(updateData));
 
       const persons = get().persons.map((p) =>
         p.id === id ? { ...p, ...input, updatedAt: now } : p
@@ -159,6 +171,11 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
       const person = docSnap.data() as Person;
       if (person.companyId !== companyId) {
         throw new Error('Unauthorized: Cannot delete person from another company');
+      }
+
+      // Borrar imagen de Storage si existe
+      if (person.fotoPath) {
+        await deletePersonImage(person.fotoPath);
       }
 
       await deleteDoc(docRef);
@@ -194,6 +211,13 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
       }
 
       const batchSize = 450;
+      // Borrar imágenes de Storage en paralelo (no bloqueante para el batch)
+      const imageDeletions = docSnapshots
+        .map((docSnap) => (docSnap.data() as Person).fotoPath)
+        .filter(Boolean)
+        .map((path) => deletePersonImage(path!));
+      await Promise.allSettled(imageDeletions);
+
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = writeBatch(db);
         const chunk = ids.slice(i, i + batchSize);
@@ -264,7 +288,7 @@ export const usePersonStore = create<PersonStore>((set, get) => ({
           if (op.type === 'delete') {
             batch.delete(op.ref);
           } else if (op.type === 'set') {
-            batch.set(op.ref, op.data);
+            batch.set(op.ref, stripUndefined(op.data));
           }
         });
         await batch.commit();

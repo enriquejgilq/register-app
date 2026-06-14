@@ -11,7 +11,7 @@ export interface Person {
   telefono: string;
   rif: string;
   correo: string;
-  fotoBase64?: string;   // Imagen codificada en Base64
+  fotoBase64?: string;   // Imagen codificada en Base64 (comprimida)
   fotoNombre?: string;   // Nombre original del archivo de imagen
   createdAt: string;     // ISO date string
   updatedAt: string;     // ISO date string
@@ -45,40 +45,58 @@ export const FIELD_LABELS: Record<keyof Omit<Person, 'id' | 'createdAt' | 'updat
   correo: 'Correo Electrónico',
 };
 
-// Encabezados de Excel esperados al importar (acepta variantes)
+/**
+ * Normaliza un encabezado de Excel para hacer la coincidencia tolerante a
+ * acentos, mayúsculas y espacios extra (ej. "Cédula  " -> "cedula").
+ */
+export function normalizeExcelHeader(header: string): string {
+  return header
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+// Encabezados de Excel esperados al importar (acepta variantes, ya normalizadas: sin acentos)
 export const EXCEL_COLUMN_MAP: Record<string, keyof PersonFormData> = {
   // Nombre
   'nombre': 'nombre',
+  'nombres': 'nombre',
   'name': 'nombre',
   'first name': 'nombre',
   'primer nombre': 'nombre',
   // Apellido
   'apellido': 'apellido',
+  'apellidos': 'apellido',
   'surname': 'apellido',
   'last name': 'apellido',
   'primer apellido': 'apellido',
   // Cédula
   'cedula': 'cedula',
-  'cédula': 'cedula',
+  'cedulas': 'cedula',
   'ci': 'cedula',
   'cedula de identidad': 'cedula',
-  'cédula de identidad': 'cedula',
   'documento': 'cedula',
+  'documentos': 'cedula',
   // Teléfono
   'telefono': 'telefono',
-  'teléfono': 'telefono',
+  'telefonos': 'telefono',
   'phone': 'telefono',
   'tel': 'telefono',
   'celular': 'telefono',
+  'celulares': 'telefono',
   // RIF
   'rif': 'rif',
+  'rifs': 'rif',
   'r.i.f': 'rif',
   'r.i.f.': 'rif',
   // Correo
   'correo': 'correo',
+  'correos': 'correo',
   'email': 'correo',
   'correo electronico': 'correo',
-  'correo electrónico': 'correo',
+  'correos electronicos': 'correo',
   'e-mail': 'correo',
 };
 

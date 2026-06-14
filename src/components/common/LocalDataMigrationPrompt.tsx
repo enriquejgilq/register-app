@@ -17,8 +17,9 @@ import {
 import { CloudUploadOutlined } from '@mui/icons-material';
 import { usePersonStore } from '../../store/personStore';
 import { useAuthStore } from '../../store/authStore';
-import { PERSONS_STORAGE_KEY } from '../../services/storageService';
 import type { Person } from '../../models/Person';
+
+const PERSONS_STORAGE_KEY = 'registro-personas:persons';
 
 export const LocalDataMigrationPrompt: React.FC = () => {
   const { company } = useAuthStore();

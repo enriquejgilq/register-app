@@ -4,7 +4,7 @@
 
 import * as ExcelJS from 'exceljs';
 import type { Person, PersonFormData, ImportResult, ImportError } from '../models/Person';
-import { EXCEL_COLUMN_MAP } from '../models/Person';
+import { EXCEL_COLUMN_MAP, normalizeExcelHeader } from '../models/Person';
 import { v4 as uuidv4 } from 'uuid';
 
 // -------------------------------------------------------
@@ -34,8 +34,12 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
   const columnMap: Record<number, keyof PersonFormData> = {};
 
   headerRow.eachCell((cell, colNumber) => {
-    const headerValue = String(cell.value ?? '').trim().toLowerCase();
-    const mappedField = EXCEL_COLUMN_MAP[headerValue];
+    const headerValue = normalizeExcelHeader(String(cell.value ?? ''));
+    let mappedField = EXCEL_COLUMN_MAP[headerValue];
+    if (!mappedField && headerValue.endsWith('s')) {
+      // Tolerar plurales no listados (ej. "telefonos" -> "telefono")
+      mappedField = EXCEL_COLUMN_MAP[headerValue.slice(0, -1)];
+    }
     if (mappedField) {
       columnMap[colNumber] = mappedField;
     }
@@ -81,15 +85,11 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
   const images = worksheet.getImages();
   if (images && images.length > 0) {
     for (const img of images) {
-      // Las imágenes en exceljs están ligadas a un rango tl (top-left) col, row (0-indexed)
-      // tl.row = 0 significa la fila 1. Así que la row del excel es tl.row + 1
       const imgRowNumber = Math.floor(img.range.tl.row) + 1;
-      
       const personMatch = persons.find(p => p._rowNumber === imgRowNumber);
       if (personMatch && !personMatch.fotoBase64) {
         const media = workbook.getImage(Number(img.imageId));
         if (media && media.buffer) {
-          // Convertir ArrayBuffer a Base64 manualmente en el navegador
           let binary = '';
           const bytes = new Uint8Array(media.buffer);
           const len = bytes.byteLength;
@@ -98,7 +98,6 @@ export async function parseExcelFile(file: File): Promise<{ persons: Person[]; r
           }
           const base64String = window.btoa(binary);
           const ext = media.extension === 'jpeg' ? 'jpeg' : 'png';
-          
           personMatch.fotoBase64 = `data:image/${ext};base64,${base64String}`;
           personMatch.fotoNombre = `foto_importada_${personMatch.cedula}.${ext}`;
         }
@@ -150,8 +149,6 @@ function mapRowToPersonExcelJS(
     telefono: normalized.telefono ?? '',
     rif: normalized.rif ?? '',
     correo: normalized.correo ?? '',
-    fotoBase64: undefined,
-    fotoNombre: undefined,
     createdAt: now,
     updatedAt: now,
   };
@@ -200,21 +197,19 @@ export async function exportPersonsToExcel(persons: Person[], fileName = 'regist
     // Alinear texto al medio
     row.alignment = { vertical: 'middle' };
 
-    // Si tiene foto, incrustarla
+    // Si tiene foto, incrustarla en el Excel
     if (person.fotoBase64) {
       try {
         const base64Data = person.fotoBase64.replace(/^data:image\/\w+;base64,/, '');
         const extensionMatch = person.fotoBase64.match(/^data:image\/(\w+);base64,/);
         const extension = extensionMatch ? (extensionMatch[1] === 'jpeg' ? 'jpeg' : 'png') : 'png';
-
         const imageId = workbook.addImage({
           base64: base64Data,
           extension: extension as 'jpeg' | 'png',
         });
-
         worksheet.addImage(imageId, {
-          tl: { col: 6.1, row: rowIndex - 1 + 0.1 }, // Columna G (index 6), con un pequeño margen
-          ext: { width: 90, height: 90 } // Tamaño de la imagen
+          tl: { col: 6.1, row: rowIndex - 1 + 0.1 },
+          ext: { width: 90, height: 90 }
         });
       } catch (err) {
         console.error('No se pudo añadir la imagen para', person.nombre, err);

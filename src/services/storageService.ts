@@ -1,50 +1,43 @@
-// ============================================================
-// Storage Service — Abstracción de persistencia
-// Preparado para migrar fácilmente a una API REST o BD
-// ============================================================
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { storage } from '../config/firebase';
 
-export interface StorageAdapter<T> {
-  getAll(): T[];
-  save(items: T[]): void;
-  clear(): void;
-}
-
-class LocalStorageAdapter<T> implements StorageAdapter<T> {
-  private readonly key: string;
-
-  constructor(key: string) {
-    this.key = key;
+/**
+ * Sube una imagen de persona a Firebase Storage.
+ * Retorna la URL pública y la ruta interna.
+ */
+export const uploadPersonImage = async (
+  companyId: string,
+  personId: string,
+  file: File
+): Promise<{ url: string; path: string }> => {
+  try {
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const filePath = `companies/${companyId}/persons/${personId}.${fileExtension}`;
+    
+    const storageRef = ref(storage, filePath);
+    
+    // Subir archivo
+    await uploadBytes(storageRef, file);
+    
+    // Obtener URL pública
+    const url = await getDownloadURL(storageRef);
+    
+    return { url, path: filePath };
+  } catch (error) {
+    console.error('Error al subir la imagen:', error);
+    throw new Error('No se pudo subir la imagen al servidor.');
   }
+};
 
-  getAll(): T[] {
-    try {
-      const raw = localStorage.getItem(this.key);
-      if (!raw) return [];
-      return JSON.parse(raw) as T[];
-    } catch {
-      console.error(`[StorageService] Error reading key "${this.key}" from localStorage`);
-      return [];
-    }
+/**
+ * Elimina una imagen de Firebase Storage usando su ruta interna.
+ */
+export const deletePersonImage = async (path: string): Promise<void> => {
+  if (!path) return;
+  try {
+    const storageRef = ref(storage, path);
+    await deleteObject(storageRef);
+  } catch (error) {
+    console.error(`Error al eliminar la imagen en ${path}:`, error);
   }
-
-  save(items: T[]): void {
-    try {
-      localStorage.setItem(this.key, JSON.stringify(items));
-    } catch (error) {
-      console.error(`[StorageService] Error saving to localStorage:`, error);
-      throw new Error('No se pudo guardar la información. El almacenamiento local puede estar lleno.');
-    }
-  }
-
-  clear(): void {
-    localStorage.removeItem(this.key);
-  }
-}
-
-// Singleton factory — para migrar a REST, reemplaza LocalStorageAdapter
-// por una clase que haga fetch() sin cambiar nada en el resto de la app
-export function createStorageService<T>(storageKey: string): StorageAdapter<T> {
-  return new LocalStorageAdapter<T>(storageKey);
-}
-
-export const PERSONS_STORAGE_KEY = 'registro-personas:persons';
+};

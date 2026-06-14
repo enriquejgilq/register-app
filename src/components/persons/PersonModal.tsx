@@ -67,8 +67,8 @@ export const PersonModal: React.FC<PersonModalProps> = ({
   } = useForm<PersonSchemaType>({
     resolver: zodResolver(personSchema),
     defaultValues,
-    mode: 'onTouched',        // Muestra errores al salir de cada campo
-    reValidateMode: 'onChange', // Re-valida mientras se escribe tras un error
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
   });
 
   const nombre = watch('nombre');
@@ -97,15 +97,15 @@ export const PersonModal: React.FC<PersonModalProps> = ({
   const onSubmit = (data: PersonSchemaType) => {
     // Validar cédula única
     const cedulaNormalizada = data.cedula.trim().toLowerCase();
-    const isDuplicate = existingPersons.some(p => 
-      p.cedula.trim().toLowerCase() === cedulaNormalizada && 
+    const isDuplicate = existingPersons.some(p =>
+      p.cedula.trim().toLowerCase() === cedulaNormalizada &&
       p.id !== editPerson?.id
     );
 
     if (isDuplicate) {
-      setError('cedula', { 
-        type: 'manual', 
-        message: 'Esta cédula ya está registrada en el sistema' 
+      setError('cedula', {
+        type: 'manual',
+        message: 'Esta cédula ya está registrada en el sistema',
       });
       return;
     }
@@ -332,7 +332,7 @@ export const PersonModal: React.FC<PersonModalProps> = ({
       </DialogContent>
 
       {/* Resumen de errores cuando el usuario intenta guardar */}
-      {Object.keys(errors).filter(k => !['fotoBase64','fotoNombre'].includes(k)).length > 0 && (
+      {Object.keys(errors).filter(k => !['fotoBase64', 'fotoNombre'].includes(k)).length > 0 && (
         <Alert
           severity="error"
           sx={{
